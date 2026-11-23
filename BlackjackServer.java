@@ -7,7 +7,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -149,21 +148,23 @@ class HttpHandler {
             "Transfer-Encoding: chunked" + CRLF +
             CRLF;
     
-    try (FileReader file = new FileReader("./play.html", StandardCharsets.UTF_8);) {
+    try (FileReader file = new FileReader("./play.html");) {
       int i;
       String block;
 
-      outStream.write(header.getBytes("UTF-8"));      // send by chunked encoding
+      outStream.write(header.getBytes());      // send by chunked encoding
       outStream.flush();
 
       while ((i = file.read(buffer)) != -1) {
-        block = Integer.toHexString(i) + CRLF + new String(buffer, 0, i) + CRLF ;
-        outStream.write(block.getBytes("UTF-8"));
+        // recompute real size in case of special characters
+        byte[] data = new String(buffer, 0, i).getBytes();
+        block = Integer.toHexString(data.length) + CRLF + new String(buffer, 0, i) + CRLF ;
+        outStream.write(block.getBytes());
         outStream.flush();
       }
 
       block = 0 + CRLF + CRLF;
-      outStream.write(block.getBytes("UTF-8"));
+      outStream.write(block.getBytes());
       outStream.flush();
 
     } catch (FileNotFoundException e) {
