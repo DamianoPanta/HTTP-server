@@ -89,9 +89,15 @@ class Worker implements Runnable {
   public void run() {
     BufferedReader bufReader = new BufferedReader(new InputStreamReader(inStream));
     httpHandler.nextRequest(bufReader);
-    if (httpHandler.getMethod().equals("GET")
-        && (httpHandler.getPath().equals("/") || httpHandler.getPath().equals("play.html"))) {
-      httpHandler.sendWebPage(outStream);
+    if (httpHandler.getMethod().equals("GET")) {
+      if (httpHandler.getPath().equals("/")) {
+        httpHandler.redirection(outStream, "http://localhost:8000/play.html");
+
+      } else if (httpHandler.getPath().equals("/play.html")) {
+        httpHandler.sendWebPage(outStream, "./play.html", "200 OK");
+      } else {
+        httpHandler.sendWebPage(outStream, "./notFound.html", "404 Not Found");
+      }
     }
     System.out.println("\nWorker finished");
     try {
@@ -108,6 +114,7 @@ class Worker implements Runnable {
 class HttpHandler {
   private String httpMethod;
   private String httpPath;
+  final private String CRLF = "\r\n";
 
   public HttpHandler(Socket socket) {
   }
@@ -118,7 +125,6 @@ class HttpHandler {
   public void nextRequest(BufferedReader bufReader) {
     try {
       String request = bufReader.readLine();
-      System.out.println(request);
       String[] words = request.split(" ");
 
       httpMethod = words[0];
@@ -137,28 +143,39 @@ class HttpHandler {
     return httpPath;
   }
 
-  public void sendWebPage(OutputStream outStream) {
-    final String CRLF = "\r\n";
-    int chunkSize = 64;
+  public void redirection(OutputStream outStream, String location) {
+    String header = "HTTP/1.1 303 See Other" + CRLF +
+        "Location: " + location + CRLF +
+        CRLF;
+
+    try {
+      outStream.write(header.getBytes());
+      outStream.flush();
+    } catch (IOException e) {
+      System.err.println("Error sending redirection" + e.getMessage());
+    }
+  }
+
+  public void sendWebPage(OutputStream outStream, String filePath, String responseStatusCode) {
+    int chunkSize = 128;
     char[] buffer = new char[chunkSize];
-    
-    String header =
-            "HTTP/1.1 200 OK" + CRLF +
-            "Content-Type: text/html; charset=UTF-8" + CRLF +
-            "Transfer-Encoding: chunked" + CRLF +
-            CRLF;
-    
-    try (FileReader file = new FileReader("./play.html");) {
+
+    String header = "HTTP/1.1 " + responseStatusCode + CRLF +
+        "Content-Type: text/html; charset=UTF-8" + CRLF +
+        "Transfer-Encoding: chunked" + CRLF +
+        CRLF;
+
+    try (FileReader file = new FileReader(filePath);) {
       int i;
       String block;
 
-      outStream.write(header.getBytes());      // send by chunked encoding
+      outStream.write(header.getBytes());
       outStream.flush();
 
-      while ((i = file.read(buffer)) != -1) {
+      while ((i = file.read(buffer)) != -1) { // send by chunked encoding
         // recompute real size in case of special characters
         byte[] data = new String(buffer, 0, i).getBytes();
-        block = Integer.toHexString(data.length) + CRLF + new String(buffer, 0, i) + CRLF ;
+        block = Integer.toHexString(data.length) + CRLF + new String(buffer, 0, i) + CRLF;
         outStream.write(block.getBytes());
         outStream.flush();
       }
@@ -169,10 +186,10 @@ class HttpHandler {
 
     } catch (FileNotFoundException e) {
       System.err.println("File play.html not found" + e.getMessage());
-    } catch (IOException e){
+    } catch (IOException e) {
       System.err.println("Error reading from play.html file" + e.getMessage());
       e.printStackTrace();
     }
-    
+
   }
 }
