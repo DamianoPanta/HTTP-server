@@ -1,9 +1,15 @@
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.SocketTimeoutException;
+import java.util.Base64;
+
+import javax.imageio.ImageIO;
 
 /**
  * HttpHandler
@@ -22,12 +28,24 @@ class HttpHandler {
    * @return true if read was successful
    */
   public Boolean nextRequest(BufferedReader bufReader) {
+    String request;
     try {
-      String request = bufReader.readLine();
-      String[] words = request.split(" ");
 
-      httpMethod = words[0];
-      httpPath = words[1];
+      while ((request = bufReader.readLine()) != null) {
+        if (request.isEmpty()) // end of request (CRLF)
+          break;
+
+        String[] words = request.split(" ");
+
+        if (words[0].equals("GET")) {
+          httpMethod = words[0];
+          httpPath = words[1];
+        }
+
+        if (words[0].equals("Accept:")) {
+          System.out.println(request);
+        }
+      }
 
       return true;
     } catch (SocketTimeoutException e) {
@@ -69,6 +87,8 @@ class HttpHandler {
         "Transfer-Encoding: chunked" + CRLF +
         CRLF;
 
+    String favicon = "<link rel=\"icon\" href=\"data:image/x-icon;base64," + imageToBase64("./logo.png") + "/>";
+
     try (FileReader file = new FileReader(filePath);) {
       int i;
       String block;
@@ -96,4 +116,16 @@ class HttpHandler {
     }
 
   }
+
+  public String imageToBase64(String filePath) {
+    final ByteArrayOutputStream os = new ByteArrayOutputStream();
+    try {
+      final BufferedImage image = ImageIO.read(new File(filePath));
+      ImageIO.write(image, "png", os);
+    } catch (IOException e) {
+      System.err.println("Error converting image " + filePath + "to base64");
+    }
+    return Base64.getEncoder().encodeToString(os.toByteArray());
+  }
+
 }
