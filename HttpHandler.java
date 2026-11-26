@@ -41,10 +41,6 @@ class HttpHandler {
           httpMethod = words[0];
           httpPath = words[1];
         }
-
-        if (words[0].equals("Accept:")) {
-          System.out.println(request);
-        }
       }
 
       return true;
@@ -87,7 +83,7 @@ class HttpHandler {
         "Transfer-Encoding: chunked" + CRLF +
         CRLF;
 
-    String favicon = "<link rel=\"icon\" href=\"data:image/x-icon;base64," + imageToBase64("./logo.png") + "/>";
+    String favicon = "<link rel=\"icon\" href=\"data:image/x-icon;base64," + BlackjackServer.logoBase64 + "/>";
 
     try (FileReader file = new FileReader(filePath);) {
       int i;
@@ -116,16 +112,4 @@ class HttpHandler {
     }
 
   }
-
-  public String imageToBase64(String filePath) {
-    final ByteArrayOutputStream os = new ByteArrayOutputStream();
-    try {
-      final BufferedImage image = ImageIO.read(new File(filePath));
-      ImageIO.write(image, "png", os);
-    } catch (IOException e) {
-      System.err.println("Error converting image " + filePath + "to base64");
-    }
-    return Base64.getEncoder().encodeToString(os.toByteArray());
-  }
-
 }
