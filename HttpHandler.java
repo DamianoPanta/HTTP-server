@@ -11,9 +11,19 @@ import java.net.SocketTimeoutException;
 class HttpHandler {
   private String httpMethod;
   private String httpPath;
+  private int httpCookie = -1;
   static final String CRLF = "\r\n";
 
-  public HttpHandler() {
+  public String getMethod() {
+    return httpMethod;
+  }
+
+  public String getPath() {
+    return httpPath;
+  }
+
+  public int getCookie() {
+    return httpCookie;
   }
 
   /**
@@ -34,6 +44,13 @@ class HttpHandler {
         if (words[0].equals("GET")) {
           httpMethod = words[0];
           httpPath = words[1];
+        } else if (words[0].equals("Cookie:")
+            && words[1].startsWith("SESSID=")) { // check if cookie set by an existing session
+          try {
+            httpCookie = Integer.parseInt(words[1].split("=")[1]);
+          } catch (NumberFormatException e) {
+            System.err.println("Invalid cookie" + e.getMessage());
+          }
         }
       }
 
@@ -45,14 +62,6 @@ class HttpHandler {
       System.err.println("Error reading bufReader" + e.getMessage());
       return false;
     }
-  }
-
-  public String getMethod() {
-    return httpMethod;
-  }
-
-  public String getPath() {
-    return httpPath;
   }
 
   public void redirection(OutputStream outStream, String location) {
@@ -68,7 +77,7 @@ class HttpHandler {
     }
   }
 
-  public void sendWebPage(OutputStream outStream, String filePath, String responseStatusCode, int cookie) {
+  public void sendWebPage(OutputStream outStream, String filePath, String responseStatusCode, int sessionId) {
     int chunkSize = 128;
     char[] buffer = new char[chunkSize];
 
@@ -77,8 +86,8 @@ class HttpHandler {
         "Content-Type: text/html; charset=UTF-8" + CRLF +
         "Transfer-Encoding: chunked" + CRLF);
 
-    if (cookie != -1)
-      header.append("Set-Cookie: SESSID=" + cookie + "; path=/" + CRLF);
+    if (sessionId != -1)
+      header.append("Set-Cookie: SESSID=" + sessionId + "; path=/" + CRLF);
 
     header.append(CRLF);
 

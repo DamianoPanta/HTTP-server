@@ -26,4 +26,16 @@ public class SessionHandler {
     map.put(id, new Session(id));
     return id;
   }
+
+  /**
+   * @param sessionId
+   * @return null if sessionId does not exist, the session otherwise
+   */
+  public static Session getSession(int sessionId) {
+    if (map.containsKey(sessionId)) {
+      return map.get(sessionId);
+    } else {
+      return null;
+    }
+  }
 }

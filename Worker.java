@@ -28,19 +28,23 @@ class Worker implements Runnable {
   public void run() {
     BufferedReader bufReader = new BufferedReader(new InputStreamReader(inStream));
 
-    if (httpHandler.nextRequest(bufReader)) {
+    if (httpHandler.nextRequest(bufReader)) { // read request from browser
 
-      // TODO check cookie sent by browser
-      // if no
+      int sessionId = httpHandler.getCookie(); // get the potential cookie
+      if (sessionId != -1) {
+        Session session = SessionHandler.getSession(sessionId); // retrieve the corresponding session
+        sessionId = -1; // no need to send cookie
+        if (session == null)
+          sessionId = SessionHandler.createSession();
+      }
 
       if (httpHandler.getMethod().equals("GET")) {
-        int cookie = SessionHandler.createSession();
         if (httpHandler.getPath().equals("/")) {
           httpHandler.redirection(outStream, "http://localhost:8000/play.html");
         } else if (httpHandler.getPath().equals("/play.html")) {
-          httpHandler.sendWebPage(outStream, "./play.html", "200 OK", cookie);
+          httpHandler.sendWebPage(outStream, "./play.html", "200 OK", sessionId);
         } else {
-          httpHandler.sendWebPage(outStream, "./notFound.html", "404 Not Found", cookie);
+          httpHandler.sendWebPage(outStream, "./notFound.html", "404 Not Found", sessionId);
         }
       }
 
