@@ -1,15 +1,11 @@
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Base64;
+import java.util.Arrays;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import javax.imageio.ImageIO;
 
 /**
  * BlackjackServer
@@ -63,5 +59,56 @@ public class BlackjackServer {
     } catch (InterruptedException e) {
       System.err.println("Threads interrupted during shutdown " + e.getMessage());
     }
+  }
+
+  String[] createDeck() {
+    // create card deck
+    char[] card_rank = {
+        '2',
+        '3',
+        '4',
+        '5',
+        '6',
+        '7',
+        '8',
+        '9',
+        'T',
+        'J',
+        'Q',
+        'K',
+        'A',
+    };
+    char[] card_suit = { 'S', 'H', 'D', 'C' };
+    String[] deck = new String[52];
+    Short index = 0;
+
+    for (char rank : card_rank) {
+      for (char suit : card_suit) {
+        deck[index] = new StringBuilder()
+            .append(rank)
+            .append(suit)
+            .toString();
+        index++;
+      }
+    }
+    return deck;
+  }
+
+  // Durstenfeld algorithm
+  String[] shuffleDeck(String[] deck) {
+    int index;
+    String temp;
+    Random random = new Random();
+    String[] player_deck = Arrays.copyOf(deck, deck.length); // need new object
+
+    for (int i = player_deck.length - 1; i > 0; i--) {
+      index = random.nextInt(i + 1); // nextInt(int bound) with bound exclusive, 0<=index<=i
+      if (index != i) {
+        temp = player_deck[i];
+        player_deck[i] = player_deck[index];
+        player_deck[index] = temp;
+      }
+    }
+    return player_deck;
   }
 }

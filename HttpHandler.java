@@ -1,15 +1,9 @@
-import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.SocketTimeoutException;
-import java.util.Base64;
-
-import javax.imageio.ImageIO;
 
 /**
  * HttpHandler
@@ -17,7 +11,7 @@ import javax.imageio.ImageIO;
 class HttpHandler {
   private String httpMethod;
   private String httpPath;
-  final private String CRLF = "\r\n";
+  static final String CRLF = "\r\n";
 
   public HttpHandler() {
   }
@@ -74,22 +68,25 @@ class HttpHandler {
     }
   }
 
-  public void sendWebPage(OutputStream outStream, String filePath, String responseStatusCode) {
+  public void sendWebPage(OutputStream outStream, String filePath, String responseStatusCode, int cookie) {
     int chunkSize = 128;
     char[] buffer = new char[chunkSize];
 
-    String header = "HTTP/1.1 " + responseStatusCode + CRLF +
+    StringBuilder header = new StringBuilder();
+    header.append("HTTP/1.1 " + responseStatusCode + CRLF +
         "Content-Type: text/html; charset=UTF-8" + CRLF +
-        "Transfer-Encoding: chunked" + CRLF +
-        CRLF;
+        "Transfer-Encoding: chunked" + CRLF);
 
-    String favicon = "<link rel=\"icon\" href=\"data:image/x-icon;base64," + BlackjackServer.logoBase64 + "/>";
+    if (cookie != -1)
+      header.append("Set-Cookie: SESSID=" + cookie + "; path=/" + CRLF);
+
+    header.append(CRLF);
 
     try (FileReader file = new FileReader(filePath);) {
       int i;
       String block;
 
-      outStream.write(header.getBytes());
+      outStream.write(header.toString().getBytes());
       outStream.flush();
 
       while ((i = file.read(buffer)) != -1) { // send by chunked encoding

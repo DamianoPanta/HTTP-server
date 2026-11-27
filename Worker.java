@@ -30,15 +30,21 @@ class Worker implements Runnable {
 
     if (httpHandler.nextRequest(bufReader)) {
 
+      // TODO check cookie sent by browser
+      // if no
+
       if (httpHandler.getMethod().equals("GET")) {
+        int cookie = SessionHandler.createSession();
         if (httpHandler.getPath().equals("/")) {
           httpHandler.redirection(outStream, "http://localhost:8000/play.html");
         } else if (httpHandler.getPath().equals("/play.html")) {
-          httpHandler.sendWebPage(outStream, "./play.html", "200 OK");
+          httpHandler.sendWebPage(outStream, "./play.html", "200 OK", cookie);
         } else {
-          httpHandler.sendWebPage(outStream, "./notFound.html", "404 Not Found");
+          httpHandler.sendWebPage(outStream, "./notFound.html", "404 Not Found", cookie);
         }
       }
+
+      // if yes fetch corresponding session
 
     }
 
